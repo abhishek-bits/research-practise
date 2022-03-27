@@ -4,21 +4,19 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Random;
 
 /**
- * Multi-threaded implementation of Sensor
+ * Multi-threaded implementation of Sensors
  */
 public class SensorHandler implements Runnable {
 	
-	// private final ServerSocket serverSocket;
 	private final Socket sensorSocket;
+	private final SensorReadingTable sensorReadingTable;
 	
-	public SensorHandler(Socket socket) {
-		// this.serverSocket = serverSocket;
+	public SensorHandler(Socket socket, SensorReadingTable sensorReadingTable) {
 		this.sensorSocket = socket;
+		this.sensorReadingTable = sensorReadingTable;
 	}
 	
 	@Override
@@ -34,14 +32,21 @@ public class SensorHandler implements Runnable {
 				// Read the value from the router
 				in = new BufferedReader(new InputStreamReader(sensorSocket.getInputStream()));
 				
-				String[] msg = in.readLine().split(" ");
-				int sensorId = Integer.parseInt(msg[0]);
-				int reading = Integer.parseInt(msg[1]);
+				String msg = in.readLine();
 				
-				System.out.println("Sensor " + sensorId + " sent reading = " + reading + " kWhr.");
+				String[] items = msg.split(" ");
+				int sensorId = Integer.parseInt(items[0]);
+				int reading = Integer.parseInt(items[1]);
 				
-				// Now, send this value to the server
-				// out = new PrintWriter(serverSocket.);
+				System.out.println("Received reading = " + reading + " kWhr from sensor " + sensorId);
+				
+				/**
+				 * Man In the Middle Attack
+				 * DoS / DDoS attack
+				 */
+				
+				sensorReadingTable.addReading(msg);
+				
 			}
 			
 		} catch(IOException e) {

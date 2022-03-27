@@ -34,9 +34,9 @@ public class SensorRepo implements Runnable {
 				
 				String msg = sensorId + " " + reading;
 				
+				// System.out.println("Sensor " + sensorId + " sent reading = " + reading + " kWhr.");
+				
 				try {
-					out = new PrintWriter(socket.getOutputStream(), true);
-					
 					// prepare output channel for this sensor
 					out = new PrintWriter(socket.getOutputStream(), true);
 					
@@ -58,7 +58,7 @@ public class SensorRepo implements Runnable {
 
 	private void addNewSensor(int id) {
 		try {
-			Socket socket = new Socket("localhost", Port.ROUTER_PORT);
+			Socket socket = new Socket("localhost", Port.SERVER_PORT);
 			Sensor sensor = new Sensor(id, socket);
 			sensors.add(sensor);
 			
