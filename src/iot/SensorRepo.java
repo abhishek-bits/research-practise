@@ -23,6 +23,8 @@ public class SensorRepo implements Runnable {
 	
 	private void sendReadingToRouter() {
 		
+		System.out.println("Sensors start sending readings to the Server...");
+		
 		while(true) {
 			
 			for(Sensor sensor : sensors) {

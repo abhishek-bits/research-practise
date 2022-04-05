@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 /**
  * Multi-threaded implementation of Sensors
@@ -12,11 +14,13 @@ import java.net.Socket;
 public class SensorHandler implements Runnable {
 	
 	private final Socket sensorSocket;
-	private final SensorReadingTable sensorReadingTable;
+	private final String tableName;
+	private final Statement stmt;
 	
-	public SensorHandler(Socket socket, SensorReadingTable sensorReadingTable) {
+	public SensorHandler(Socket socket, Statement stmt, String tableName) {
 		this.sensorSocket = socket;
-		this.sensorReadingTable = sensorReadingTable;
+		this.stmt = stmt;
+		this.tableName = tableName;
 	}
 	
 	@Override
@@ -35,21 +39,25 @@ public class SensorHandler implements Runnable {
 				String msg = in.readLine();
 				
 				String[] items = msg.split(" ");
-				int sensorId = Integer.parseInt(items[0]);
+				int sensorID = Integer.parseInt(items[0]);
 				int reading = Integer.parseInt(items[1]);
 				
-				System.out.println("Received reading = " + reading + " kWhr from sensor " + sensorId);
+				// System.out.println("Received reading = " + reading + " kWhr from sensor " + sensorID);
 				
 				/**
 				 * Man In the Middle Attack
 				 * DoS / DDoS attack
 				 */
 				
-				sensorReadingTable.addReading(msg);
+				String query = "INSERT INTO " + tableName + "(SEN_ID, SEN_READ) "
+						+ "values(" + sensorID + "," + reading + ");";
 				
+				stmt.execute(query);
 			}
 			
 		} catch(IOException e) {
+			e.printStackTrace();
+		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
 			try {
