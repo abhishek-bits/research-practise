@@ -3,8 +3,8 @@ package iot;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.Socket;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -14,42 +14,47 @@ import java.sql.Statement;
 public class SensorHandler implements Runnable {
 	
 	private final Socket sensorSocket;
-	private final String tableName;
 	private final Statement stmt;
+	private int sensorID;
 	
-	public SensorHandler(Socket socket, Statement stmt, String tableName) {
+	public SensorHandler(Socket socket, Statement stmt) {
 		this.sensorSocket = socket;
 		this.stmt = stmt;
-		this.tableName = tableName;
 	}
 	
 	@Override
 	public void run() {
 		
-		PrintWriter out = null;
+		String query = null;
 		BufferedReader in = null;
 		
 		try {
 			
+			// Add this sensor information into the Status table
+			query = "INSERT INTO "+DB.SENSOR_STATUS_TABLE+"(SEN_PORT) "
+					+ "VALUES("+sensorSocket.getPort()+");";
+			stmt.execute(query);
+			
+			// Find and store the Unique ID for this sensor
+			query = "SELECT SEN_ID from "+DB.SENSOR_STATUS_TABLE+" where SEN_PORT=" + sensorSocket.getPort() + ";"; 
+			ResultSet rs = stmt.executeQuery(query);
+			if(rs.next()) {
+				sensorID = rs.getInt("SEN_ID");
+			}
+			
+			System.out.println("Receiving readings from Sensor ID = " + sensorID);
+			
+			// Now each time this sensor sends a reading,
+			// it will be updated ito the Reading table
 			while(true) {
-				
 				// Read the value from the router
 				in = new BufferedReader(new InputStreamReader(sensorSocket.getInputStream()));
 				
-				String msg = in.readLine();
-				
-				String[] items = msg.split(" ");
-				int sensorID = Integer.parseInt(items[0]);
-				int reading = Integer.parseInt(items[1]);
+				int reading = Integer.parseInt(in.readLine());
 				
 				// System.out.println("Received reading = " + reading + " kWhr from sensor " + sensorID);
-				
-				/**
-				 * Man In the Middle Attack
-				 * DoS / DDoS attack
-				 */
-				
-				String query = "INSERT INTO " + tableName + "(SEN_ID, SEN_READ) "
+								
+				query = "INSERT INTO " + DB.SENSOR_READING_TABLE + "(SEN_ID, SEN_READ) "
 						+ "values(" + sensorID + "," + reading + ");";
 				
 				stmt.execute(query);
@@ -63,9 +68,6 @@ public class SensorHandler implements Runnable {
 			try {
 				if(in != null) {
 					in.close();
-				}
-				if(out != null) {
-					out.close();
 				}
 				sensorSocket.close();
 			} catch (IOException e) {
