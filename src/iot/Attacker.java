@@ -7,15 +7,16 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Random;
 
 public class Attacker {
 
 	public static void main(String[] args) {
 //		initiateDOSAttack();
-		intitiateMaliciousNodeAttack();
+		intitiateMaliciousSensorAttack();
 	}
 
-	private static void intitiateMaliciousNodeAttack() {
+	private static void intitiateMaliciousSensorAttack() {
 		Socket socket = null;
 		System.out.println("Attempting connection to server (Dictionary attack)...");
 		for(String server : AttackerRepo.DEFAULT_SERVERS) {
@@ -37,16 +38,14 @@ public class Attacker {
 			System.out.println("Dictionary attack failure!");
 			return;
 		}
-		
-		Sensor malSensor = new Sensor();
 		while(true) {
-			int falseReading = 0;
+			int falseReading = new Random().nextInt(1000);
 			/*
 			 * Send this reading to the server
 			 */
-			String falseMsg = falseReading;
+			String falseMsg = String.valueOf(falseReading);
 			try {
-				PrintWriter out = new PrintWriter(socket.getOutputStream());
+				PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
 				out.println(falseMsg);
 			} catch (IOException e) {
 				e.printStackTrace();

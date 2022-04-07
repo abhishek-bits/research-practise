@@ -14,7 +14,7 @@ public class Sensor {
 	public Sensor() {
 		connectToServer();
 	}
-		
+	
 	private int getReading() {
 		return new Random().nextInt(HIGH - LOW) + LOW;
 	}
