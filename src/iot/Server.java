@@ -1,3 +1,5 @@
+/** Server.java */
+
 package iot;
 
 import java.io.IOException;
@@ -8,9 +10,6 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-/**
- * Router class
- */
 public class Server {
 	
 	public static void main(String[] args) throws ClassNotFoundException, SQLException, IOException {
@@ -32,13 +31,18 @@ public class Server {
 		// Create Statement object
 		stmt = conn.createStatement();
 		
+		/** Filtered Delta Mean Difference Algorithm **/
 		query = "drop table if exists "+DB.SENSOR_READING_TABLE+";";
 		stmt.execute(query);
-		query = "drop table if exists "+DB.SENSOR_STATUS_TABLE+";";
+		query = "drop table if exists "+DB.SENSOR_DISTORTED_READINGS_TABLE+";";
+		stmt.execute(query);
+		query = "drop table if exists "+DB.SENSOR_KEY_TABLE+";";
+		stmt.execute(query);
+		/**********************************************/
+		query = "drop table if exists "+DB.SENSOR_REPO_TABLE+";";
 		stmt.execute(query);
 		
-		
-		query = "create table if not exists "+DB.SENSOR_STATUS_TABLE+"("
+		query = "create table if not exists "+DB.SENSOR_REPO_TABLE+"("
 				+ "SEN_ID integer PRIMARY KEY AUTO_INCREMENT,"
 				+ "SEN_PORT integer not null"
 				+ ");";
@@ -46,10 +50,26 @@ public class Server {
 		query = "create table if not exists "+DB.SENSOR_READING_TABLE+"("
 				+ "SEN_ID integer NOT NULL,"
 				+ "SEN_READ integer NOT NULL,"
-				+ "TS DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
-				+ "FOREIGN KEY (SEN_ID) REFERENCES "+DB.SENSOR_STATUS_TABLE+"(SEN_ID)"
+				+ "TS DATETIME NOT NULL,"
+				+ "FOREIGN KEY (SEN_ID) REFERENCES "+DB.SENSOR_REPO_TABLE+"(SEN_ID)"
 				+ ");";
 		stmt.execute(query);
+		/** Filtered Delta Mean Difference Algorithm **/
+		query = "create table if not exists "+DB.SENSOR_DISTORTED_READINGS_TABLE+"("
+				+ "SEN_ID integer NOT NULL,"
+				+ "SEN_DIST_READ integer NOT NULL,"
+				+ "TS DATETIME NOT NULL,"
+				+ "FOREIGN KEY (SEN_ID) REFERENCES "+DB.SENSOR_REPO_TABLE+"(SEN_ID)"
+				+ ");";
+		stmt.execute(query);
+		query = "create table if not exists "+DB.SENSOR_KEY_TABLE+"("
+				+ "SEN_ID integer NOT NULL,"
+				+ "SEN_KEY integer NOT NULL,"
+				+ "TS DATETIME NOT NULL,"
+				+ "FOREIGN KEY (SEN_ID) REFERENCES "+DB.SENSOR_REPO_TABLE+"(SEN_ID)"
+				+ ");";
+		stmt.execute(query); 
+		/**********************************************/
 		
 		// System.out.println("Table created successfully!");
 		

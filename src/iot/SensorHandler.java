@@ -1,3 +1,5 @@
+/** SensorHandler.java */
+
 package iot;
 
 import java.io.BufferedReader;
@@ -7,15 +9,22 @@ import java.net.Socket;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
+import java.util.Date;
+import java.util.Random;
 
-/**
- * Multi-threaded implementation of Sensors
- */
 public class SensorHandler implements Runnable {
 	
+	private static final int e = 3;
 	private final Socket sensorSocket;
 	private final Statement stmt;
 	private int sensorID;
+	private int sensorKey;
+	private int d;			// actual reading from the sensor
+	private int d_dash;		// distorted reading from the sensor
+	private String query;
+	private ResultSet rs;
+	private Timestamp ts;
 	
 	public SensorHandler(Socket socket, Statement stmt) {
 		this.sensorSocket = socket;
@@ -31,16 +40,16 @@ public class SensorHandler implements Runnable {
 		try {
 			
 			// Add this sensor information into the Status table
-			query = "INSERT INTO "+DB.SENSOR_STATUS_TABLE+"(SEN_PORT) "
+			query = "INSERT INTO "+DB.SENSOR_REPO_TABLE+"(SEN_PORT) "
 					+ "VALUES("+sensorSocket.getPort()+");";
 			stmt.execute(query);
 			
 			// Find and store the Unique ID for this sensor
-			query = "SELECT SEN_ID from "+DB.SENSOR_STATUS_TABLE+" where SEN_PORT=" + sensorSocket.getPort() + ";"; 
-			ResultSet rs = stmt.executeQuery(query);
+			query = "SELECT SEN_ID from "+DB.SENSOR_REPO_TABLE+" where SEN_PORT=" + sensorSocket.getPort() + ";"; 
+			rs = stmt.executeQuery(query);
 			if(rs.next()) {
 				sensorID = rs.getInt("SEN_ID");
-			}
+			}			
 			
 			System.out.println("Receiving readings from Sensor ID = " + sensorID);
 			
@@ -49,18 +58,41 @@ public class SensorHandler implements Runnable {
 			while(true) {
 				// Read the value from the router
 				in = new BufferedReader(new InputStreamReader(sensorSocket.getInputStream()));
-				
-				int reading = Integer.parseInt(in.readLine());
-				
-				// System.out.println("Received reading = " + reading + " kWhr from sensor " + sensorID);
 								
-				query = "INSERT INTO " + DB.SENSOR_READING_TABLE + "(SEN_ID, SEN_READ) "
-						+ "values(" + sensorID + "," + reading + ");";
+				/** Filtered Delta Mean Difference Algorithm **/
+				
+				//Get the actual reading from the sensor
+				d = Integer.parseInt(in.readLine());
+				
+				// Collect the Timestamp
+				ts = new Timestamp(new Date().getTime());
+				
+				// First, allot a fresh key to this Sensor
+				sensorKey = new Random().nextInt(2);
+				
+				query = "INSERT INTO " + DB.SENSOR_KEY_TABLE+ " "
+						+ "values(" + sensorID + ", " + sensorKey + ", '" + ts + "');";
+				stmt.execute(query);
+				
+				// First, we store the actual reading first
+				query = "INSERT INTO " + DB.SENSOR_READING_TABLE + " "
+						+ "values(" + sensorID + ", " + d + ", '" + ts + "');";
+				stmt.execute(query);
+				
+				// Now, depending on the key, calculate the distorted value
+				d_dash = sensorKey == 1 ? d + e : d - e;
+				
+				// Now, store the distorted sensor reading
+				query = "INSERT INTO " + DB.SENSOR_DISTORTED_READINGS_TABLE + " "
+						+ "values(" + sensorID + ", " + d_dash + ", '" + ts + "');"; 
 				
 				stmt.execute(query);
+				
+				/**********************************************/
+
 			}
 			
-		} catch(IOException e) {
+		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (SQLException e) {
 			e.printStackTrace();

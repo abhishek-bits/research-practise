@@ -1,8 +1,10 @@
+/** AttackerRepo.java */
+
 package iot;
 
 public class AttackerRepo {
 	
-	public static final Integer[] DEFAULT_PORTS = {80, 8080};
+	public static final Integer[] DEFAULT_PORTS = {8080};
 	public static final String[] DEFAULT_DB_NAMES = {"master", "root", "test", "db"};
 	public static final String[] DEFAULT_SERVERS = {"localhost", "192.168.8.1"};
 	public static final String[] DEFAULT_USERNAMES = {"root", "admin", "abhishek", "master"};
